@@ -10,6 +10,7 @@ using CUE4Parse.UE4.Versions;
 using Newtonsoft.Json;
 using Serilog;
 
+
 class Program
 {
     class Options
@@ -43,24 +44,45 @@ class Program
 
     static void RunOptions(Options opts)
     {
+        Log.Information("Gamedir: {0}", opts.GameDir);
+        Log.Information("Initalizing provider...");
+
         if (string.IsNullOrEmpty(opts.Output))
         {
             opts.Output = Path.Combine(opts.GameDir, "outputs");
+            
         }
-
-        Log.Information("Gamedir: {0} OutputDir: {1}", opts.GameDir, opts.Output);
-        Log.Information("Initalizing provider...");
+        Log.Information("OutputDir: {0}", opts.Output);
 
         var provider = new DefaultFileProvider(
             directory: opts.GameDir,
             searchOption: SearchOption.AllDirectories,
             versions: new VersionContainer(EGame.GAME_TowerOfFantasy)
         );
-        
+
+        provider.Initialize();
+
         if (!string.IsNullOrEmpty(opts.Key)) {
             provider.SubmitKey(new FGuid(), new CUE4Parse.Encryption.Aes.FAesKey(opts.Key));
+            Log.Information("Key: {0}", opts.Key);
         }
-      
+
+        try
+        {
+            var allResources = provider.Files
+            .Where(o => o.ToString().ToLower().Contains("brush"));
+            foreach (var asset in allResources)
+            {
+                Log.Information("{0} :{1}", asset, asset.GetType);
+            }
+        }catch (Exception e)
+        {
+            Log.Error("Fail to load res: {0}", e);
+            Environment.Exit(1);
+        }
+
+        
+        
     }
 
     static void HandleParseError(IEnumerable<Error> errs)
