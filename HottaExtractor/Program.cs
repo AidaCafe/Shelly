@@ -1,11 +1,6 @@
-﻿using System;
-using CommandLine;
+﻿using CommandLine;
 using CUE4Parse.FileProvider;
 using CUE4Parse.UE4.Objects.Core.Misc;
-using CUE4Parse.UE4.Assets.Exports;
-using CUE4Parse.UE4.Objects.Core.i18N;
-using CUE4Parse.UE4.Objects.UObject;
-using CUE4Parse.UE4.Pak;
 using CUE4Parse.UE4.Versions;
 using Newtonsoft.Json;
 using Serilog;
@@ -38,7 +33,7 @@ class Program
         Parser.Default.ParseArguments<Options>(args)
             .WithParsed(RunOptions)
             .WithNotParsed(HandleParseError);
-        
+
     }
 
     static void RunOptions(Options opts)
@@ -49,7 +44,7 @@ class Program
         if (string.IsNullOrEmpty(opts.Output))
         {
             opts.Output = Path.Combine(opts.GameDir, "outputs");
-            
+
         }
         Log.Information("OutputDir: {0}", opts.Output);
 
@@ -74,7 +69,8 @@ class Program
             "DA_TamingMonster.uasset"
         };
 
-        if (!string.IsNullOrEmpty(opts.Key)) {
+        if (!string.IsNullOrEmpty(opts.Key))
+        {
             provider.SubmitKey(new FGuid(), new CUE4Parse.Encryption.Aes.FAesKey(opts.Key));
             Log.Information("Key: {0}", opts.Key);
         }
@@ -103,13 +99,15 @@ class Program
                     {
                         Log.Information("{0}", JsonConvert.SerializeObject(obj, Formatting.Indented));
                     }
-                } catch (Exception ex)
+                }
+                catch (Exception ex)
                 {
                     Log.Warning("Error occurred when parsing {0} : {1}", asset.Value.Path, ex.Message);
                     Log.Debug("Stack Trace \n {0}", ex.StackTrace);
                 }
             }
-        }catch (Exception e)
+        }
+        catch (Exception e)
         {
             Log.Error("Fail to load res: {0}", e);
             Environment.Exit(1);
