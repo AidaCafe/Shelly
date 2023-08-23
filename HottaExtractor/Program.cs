@@ -10,7 +10,6 @@ using CUE4Parse.UE4.Versions;
 using Newtonsoft.Json;
 using Serilog;
 
-
 class Program
 {
     class Options
@@ -59,8 +58,21 @@ class Program
             searchOption: SearchOption.AllDirectories,
             versions: new VersionContainer(EGame.GAME_TowerOfFantasy)
         );
-
         provider.Initialize();
+
+        string[] pathList = {
+            "Hotta/Content/Resources/CoreBlueprints",
+            "Hotta/Content/Resources/Dialogues",
+            "Hotta/Content/Resources/Icon",
+            "Hotta/Content/Resources/Text",
+            "Hotta/Content/Resources/UI",
+            "Hotta/Content/SevenForest/Data"
+        };
+
+        string[] skippedRes =
+        {
+            "DA_TamingMonster.uasset"
+        };
 
         if (!string.IsNullOrEmpty(opts.Key)) {
             provider.SubmitKey(new FGuid(), new CUE4Parse.Encryption.Aes.FAesKey(opts.Key));
@@ -69,20 +81,39 @@ class Program
 
         try
         {
-            var allResources = provider.Files
-            .Where(o => o.ToString().ToLower().Contains("brush"));
-            foreach (var asset in allResources)
+            var allResources = provider.Files.Where(o =>
             {
-                Log.Information("{0} :{1}", asset, asset.GetType);
+                return pathList.Any(n =>
+                {
+                    return o.ToString().Contains(n) && !skippedRes.Contains(o.ToString());
+                });
+            });
+
+            Log.Information("Filtered: {0}", allResources.Count());
+
+            foreach (var asset in allResources.Where(a => a.Key.ToLower().Contains("taming")))
+            {
+                Log.Information("Parsing {0} at {1}", asset.Value.Name, asset.Value.PathWithoutExtension);
+                try
+                {
+                    var curPackage = provider.LoadPackage(asset.Value);
+                    Log.Information("{0}", curPackage.NameMap);
+                    var allObjects = curPackage.GetExports();
+                    foreach (var obj in allObjects)
+                    {
+                        Log.Information("{0}", JsonConvert.SerializeObject(obj, Formatting.Indented));
+                    }
+                } catch (Exception ex)
+                {
+                    Log.Warning("Error occurred when parsing {0} : {1}", asset.Value.Path, ex.Message);
+                    Log.Debug("Stack Trace \n {0}", ex.StackTrace);
+                }
             }
         }catch (Exception e)
         {
             Log.Error("Fail to load res: {0}", e);
             Environment.Exit(1);
         }
-
-        
-        
     }
 
     static void HandleParseError(IEnumerable<Error> errs)
