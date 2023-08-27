@@ -30,7 +30,7 @@ class Program
                         .CreateLogger();
                 }
             })
-            .WithParsed<OptionExtract>(ExtractHandler.handle)
+            .WithParsed<OptionExtract>(o  => ExtractHandler.FromOpts(o).Handle())
             .WithNotParsed(HandleParseError);
 
     }
